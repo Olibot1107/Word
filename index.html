@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Search Scanner Pro</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: white;
+      text-align: center;
+      font-size: 2.5em;
+      margin-bottom: 30px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .section {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      margin: 15px 0;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+    }
+    h2 {
+      color: #667eea;
+      margin-top: 0;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+    video, #scannedImage {
+      width: 100%;
+      max-width: 500px;
+      border: 3px solid #667eea;
+      border-radius: 10px;
+      display: block;
+      margin: 10px auto;
+    }
+    #gridDisplay {
+      display: inline-block;
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px auto;
+      display: block;
+      width: fit-content;
+    }
+    .grid-row {
+      display: flex;
+    }
+    .grid-cell {
+      width: 45px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #ccc;
+      font-size: 20px;
+      font-weight: bold;
+      background: white;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .grid-cell input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      text-transform: uppercase;
+      background: transparent;
+      cursor: pointer;
+    }
+    .grid-cell input:focus {
+      outline: 3px solid #667eea;
+      background: #e3f2fd;
+    }
+    .grid-cell.highlight {
+      background: #ffd700 !important;
+      border-color: #ffa500 !important;
+      transform: scale(1.1);
+      z-index: 10;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+    }
+    .grid-cell.detected {
+      background: #e8f5e9;
+    }
+    input[type="text"], input[type="number"], select {
+      padding: 12px;
+      font-size: 16px;
+      margin: 5px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      transition: border 0.3s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+      border-color: #667eea;
+      outline: none;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: bold;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+    }
+    .btn-warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    #results, .info-box {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .info-box {
+      background: #e3f2fd;
+      border-left: 5px solid #2196F3;
+    }
+    .success-box {
+      background: #e8f5e9;
+      border-left: 5px solid #4caf50;
+      color: #2e7d32;
+      font-weight: bold;
+    }
+    .error-box {
+      background: #ffebee;
+      border-left: 5px solid #f44336;
+      color: #c62828;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 15px 0;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 2em;
+      font-weight: bold;
+    }
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+    #processingStatus {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #667eea;
+      padding: 10px;
+    }
+    .loading {
+      display: inline-block;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .control-group {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Word Search Scanner Pro</h1>
+
+    <div class="section">
+      <h2>📷 Step 1: Scan Your Word Search</h2>
+      <div class="control-group">
+        <label><strong>Letters per row:</strong></label>
+        <input id="gridWidth" type="number" value="12" min="5" max="30" style="width: 100px;" />
+        <br>
+        <label><strong>Select Camera:</strong></label>
+        <select id="cameraSelect" style="width: 250px;"></select>
+        <br>
+        <button onclick="requestCamera()" class="btn-success">🎥 Enable Camera</button>
+        <button onclick="captureImage()" class="btn-warning">📸 Capture & Scan</button>
+      </div>
+      
+      <video id="video" width="500" autoplay></video>
+      <canvas id="canvas" width="800" height="800" style="display:none"></canvas>
+      <div id="processingStatus"></div>
+    </div>
+
+    <div class="two-column">
+      <div class="section">
+        <h2>🖼️ Captured Image</h2>
+        <img id="scannedImage" style="display:none;" />
+        <div id="imageStatus" class="info-box">No image captured yet. Click "Capture & Scan" to start!</div>
+      </div>
+
+      <div class="section">
+        <h2>📊 Scan Statistics</h2>
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-number" id="statRows">0</div>
+            <div class="stat-label">Rows</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statCols">0</div>
+            <div class="stat-label">Columns</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statLetters">0</div>
+            <div class="stat-label">Letters</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statConfidence">0%</div>
+            <div class="stat-label">Confidence</div>
+          </div>
+        </div>
+        <h3>📝 Detected Text:</h3>
+        <textarea id="detectedText" rows="8" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>✏️ Step 2: Edit Grid (Click any cell to fix mistakes)</h2>
+      <button onclick="applyGridChanges()" class="btn-success">✓ Apply Changes</button>
+      <button onclick="addRow()">➕ Add Row</button>
+      <button onclick="removeRow()" class="btn-danger">➖ Remove Last Row</button>
+      <button onclick="clearGrid()" class="btn-warning">🗑️ Clear Grid</button>
+      <div id="gridDisplay" style="text-align: center;">No grid loaded. Capture an image first!</div>
+    </div>
+
+    <div class="section">
+      <h2>🔍 Step 3: Search for Words</h2>
+      <div class="control-group">
+        <input id="wordInput" type="text" placeholder="Enter word to find (e.g., PUZZLE)" style="width: 300px;" />
+        <button onclick="searchAndHighlight()" class="btn-success">🔦 Find & Highlight</button>
+        <button onclick="clearHighlights()" class="btn-warning">🧹 Clear Highlights</button>
+      </div>
+      <div id="results"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script>
+    let currentGrid = [];
+    let currentStream;
+    let capturedImageData = null;
+    let ocrConfidence = 0;
+
+    async function requestCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' } 
+        });
+        stream.getTracks().forEach(t => t.stop());
+        await listCameras();
+        const sel = document.getElementById('cameraSelect');
+        if (sel.options.length > 0) {
+          await startCamera(sel.value);
+        }
+      } catch (err) {
+        alert('Camera permission denied: ' + err.message);
+      }
+    }
+
+    async function listCameras() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoSelect = document.getElementById('cameraSelect');
+      videoSelect.innerHTML = '';
+      devices.forEach((d, idx) => {
+        if (d.kind === 'videoinput') {
+          const option = document.createElement('option');
+          option.value = d.deviceId;
+          option.textContent = d.label || `Camera ${idx + 1}`;
+          videoSelect.appendChild(option);
+        }
+      });
+      videoSelect.onchange = () => startCamera(videoSelect.value);
+    }
+
+    async function startCamera(deviceId) {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+      currentStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          deviceId: deviceId ? { exact: deviceId } : undefined,
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        } 
+      });
+      document.getElementById('video').srcObject = currentStream;
+    }
+
+    async function captureImage() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      canvas.width = video.videoWidth || 800;
+      canvas.height = video.videoHeight || 800;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      capturedImageData = canvas.toDataURL('image/png');
+      
+      const img = document.getElementById('scannedImage');
+      img.src = capturedImageData;
+      img.style.display = 'block';
+      
+      document.getElementById('processingStatus').innerHTML = '<span class="loading">🔄 Processing image with AI...</span>';
+      document.getElementById('imageStatus').className = 'info-box';
+      document.getElementById('imageStatus').textContent = '⏳ Analyzing image...';
+
+      try {
+        const result = await Tesseract.recognize(
+          capturedImageData, 
+          'eng',
+          {
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                document.getElementById('processingStatus').innerHTML = 
+                  `<span class="loading">🔄 Recognizing text... ${Math.round(m.progress * 100)}%</span>`;
+              }
+            }
+          }
+        );
+        
+        const text = result.data.text;
+        ocrConfidence = Math.round(result.data.confidence);
+        
+        document.getElementById('detectedText').value = text;
+        document.getElementById('processingStatus').innerHTML = '✅ Processing complete!';
+        
+        const allLetters = text.replace(/[^A-Za-z]/g, '').toUpperCase();
+        const gridWidth = parseInt(document.getElementById('gridWidth').value) || 12;
+        
+        currentGrid = [];
+        for (let i = 0; i < allLetters.length; i += gridWidth) {
+          const row = allLetters.slice(i, i + gridWidth).split('');
+          if (row.length === gridWidth) {
+            currentGrid.push(row);
+          }
+        }
+
+        if (currentGrid.length === 0) {
+          document.getElementById('imageStatus').className = 'error-box';
+          document.getElementById('imageStatus').textContent = '❌ No valid grid found. Try adjusting "Letters per row" setting.';
+          return;
+        }
+
+        updateStats();
+        displayEditableGrid();
+        
+        document.getElementById('imageStatus').className = 'success-box';
+        document.getElementById('imageStatus').innerHTML = `✅ <strong>Success!</strong> Grid imported with ${currentGrid.length} rows × ${gridWidth} columns!`;
+      } catch (err) {
+        document.getElementById('processingStatus').innerHTML = '❌ Error occurred';
+        document.getElementById('imageStatus').className = 'error-box';
+        document.getElementById('imageStatus').textContent = '❌ Error: ' + err.message;
+      }
+    }
+
+    function updateStats() {
+      const rows = currentGrid.length;
+      const cols = currentGrid[0]?.length || 0;
+      const letters = rows * cols;
+      
+      document.getElementById('statRows').textContent = rows;
+      document.getElementById('statCols').textContent = cols;
+      document.getElementById('statLetters').textContent = letters;
+      document.getElementById('statConfidence').textContent = ocrConfidence + '%';
+    }
+
+    function displayEditableGrid() {
+      const display = document.getElementById('gridDisplay');
+      display.innerHTML = '';
+
+      if (currentGrid.length === 0) {
+        display.textContent = 'No grid loaded. Capture an image first!';
+        return;
+      }
+
+      currentGrid.forEach((row, r) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'grid-row';
+        
+        row.forEach((letter, c) => {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell detected';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.maxLength = 1;
+          input.value = letter;
+          input.dataset.row = r;
+          input.dataset.col = c;
+          
+          input.addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+          });
+          
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || 
+                e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+              e.preventDefault();
+              navigateGrid(r, c, e.key);
+            }
+          });
+          
+          cell.appendChild(input);
+          rowDiv.appendChild(cell);
+        });
+        
+        display.appendChild(rowDiv);
+      });
+    }
+
+    function navigateGrid(r, c, key) {
+      let newR = r, newC = c;
+      if (key === 'ArrowRight') newC++;
+      if (key === 'ArrowLeft') newC--;
+      if (key === 'ArrowDown') newR++;
+      if (key === 'ArrowUp') newR--;
+      
+      const nextInput = document.querySelector(
+        `.grid-cell input[data-row="${newR}"][data-col="${newC}"]`
+      );
+      if (nextInput) nextInput.focus();
+    }
+
+    function applyGridChanges() {
+      const inputs = document.querySelectorAll('.grid-cell input');
+      inputs.forEach(input => {
+        const r = parseInt(input.dataset.row);
+        const c = parseInt(input.dataset.col);
+        currentGrid[r][c] = input.value.toUpperCase() || ' ';
+      });
+      
+      const results = document.getElementById('results');
+      results.className = 'success-box';
+      results.textContent = '✅ Grid changes applied successfully!';
+      updateStats();
+    }
+
+    function addRow() {
+      const gridWidth = currentGrid[0]?.length || parseInt(document.getElementById('gridWidth').value);
+      const newRow = new Array(gridWidth).fill('_');
+      currentGrid.push(newRow);
+      displayEditableGrid();
+      updateStats();
+    }
+
+    function removeRow() {
+      if (currentGrid.length > 0) {
+        currentGrid.pop();
+        displayEditableGrid();
+        updateStats();
+      }
+    }
+
+    function clearGrid() {
+      if (confirm('Are you sure you want to clear the entire grid?')) {
+        currentGrid = [];
+        displayEditableGrid();
+        updateStats();
+      }
+    }
+
+    function searchAndHighlight() {
+      applyGridChanges();
+      
+      const word = document.getElementById('wordInput').value.trim().toUpperCase();
+      const results = document.getElementById('results');
+
+      if (!word) {
+        results.className = 'error-box';
+        results.textContent = '⚠️ Please enter a word to search.';
+        return;
+      }
+
+      if (currentGrid.length === 0) {
+        results.className = 'error-box';
+        results.textContent = '⚠️ Please scan a grid first.';
+        return;
+      }
+
+      clearHighlights();
+
+      const dirs = [
+        { dr: 1, dc: 0, name: 'Down ↓' },
+        { dr: -1, dc: 0, name: 'Up ↑' },
+        { dr: 0, dc: 1, name: 'Right →' },
+        { dr: 0, dc: -1, name: 'Left ←' },
+        { dr: 1, dc: 1, name: 'Diagonal ↘' },
+        { dr: 1, dc: -1, name: 'Diagonal ↙' },
+        { dr: -1, dc: 1, name: 'Diagonal ↗' },
+        { dr: -1, dc: -1, name: 'Diagonal ↖' }
+      ];
+
+      let foundPositions = [];
+
+      for (let r = 0; r < currentGrid.length; r++) {
+        for (let c = 0; c < currentGrid[r].length; c++) {
+          if (currentGrid[r][c] === word[0]) {
+            for (const dir of dirs) {
+              if (searchWordInDirection(currentGrid, word, r, c, dir.dr, dir.dc)) {
+                highlightWord(r, c, dir.dr, dir.dc, word.length);
+                foundPositions.push(`Row ${r+1}, Col ${c+1} (${dir.name})`);
+              }
+            }
+          }
+        }
+      }
+
+      if (foundPositions.length > 0) {
+        results.className = 'success-box';
+        results.innerHTML = `<strong>✅ Found "${word}"!</strong><br>Locations: ${foundPositions.join(' | ')}`;
+      } else {
+        results.className = 'error-box';
+        results.textContent = `❌ "${word}" not found in the grid. Check spelling or edit the grid.`;
+      }
+    }
+
+    function searchWordInDirection(grid, word, r, c, dr, dc) {
+      for (let i = 0; i < word.length; i++) {
+        const nr = r + dr * i;
+        const nc = c + dc * i;
+        if (
+          nr < 0 || nr >= grid.length ||
+          nc < 0 || nc >= grid[0].length ||
+          grid[nr][nc] !== word[i]
+        ) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function highlightWord(startR, startC, dr, dc, length) {
+      for (let i = 0; i < length; i++) {
+        const r = startR + dr * i;
+        const c = startC + dc * i;
+        const cell = document.querySelector(
+          `.grid-cell[data-row="${r}"][data-col="${c}"]`
+        );
+        if (cell) {
+          cell.classList.add('highlight');
+        }
+      }
+    }
+
+    function clearHighlights() {
+      document.querySelectorAll('.grid-cell').forEach(cell => {
+        cell.classList.remove('highlight');
+      });
+    }
+  </script>
+</body>
+</html>
